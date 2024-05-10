@@ -1,0 +1,72 @@
+local replayName = "t.txt"
+	local startTime = tick()
+assert(isfile(replayName), "macro file name not found!")
+local macro = readfile(replayName)
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Ready"):FireServer()
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local httpService = game:GetService("HttpService")
+local recordTowers = httpService:JSONDecode(macro)
+local function stcf(s)
+    return loadstring("return CFrame.new(" .. s .. ");")();
+end
+
+local function notif(title,text,icon)
+	game:GetService("StarterGui"):SetCore("SendNotification",{
+		Title = title, -- Required
+		Text = text, -- Required
+		Icon = icon -- Optional
+	})
+end 
+
+local function place(info)
+	local args = {
+        [1] = info.character,
+        [2] = stcf(info.position),
+        [3] = Vector3.zero,
+        [4] = info.unitid
+    }
+    
+    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CreateUnits"):FireServer(unpack(args))
+    end
+
+	local function upgrade(info)
+		local args = {
+			[1] = workspace:WaitForChild("Unit"):WaitForChild("clonetatloi01"):WaitForChild(info.character)
+		}
+		
+		game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Upgrades"):FireServer(unpack(args))
+	end 
+
+
+	 local function sell(info)
+		game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SellUnit"):FireServer(info.character)
+	 end 
+
+    local tower = 1
+    while wait() do 
+        if not recordTowers[tower] then 
+            break 
+        end
+        local currentTask = recordTowers[tower] 
+        if (currentTask.time <= tick() - startTime) then 
+			 if currentTask.type == "CreateUnit" then 
+            place(currentTask)
+			 notif("Place Status","Place Successfully!","rbxassetid://13693399274")
+			 elseif currentTask.type == "UpgradeUnit" then 
+				upgrade(currentTask)
+				notif("Upgrade Status","Upgrade Successfully!","rbxassetid://13693399274")
+			 elseif currentTask.type == "SellUntit" then 
+				sell(currentTask)
+				notif("Sell Status","Sell Successfully!","rbxassetid://13693399274")
+			 end
+
+            recordTowers[tower] = nil
+            tower = tower + 1 
+        end
+    end  
